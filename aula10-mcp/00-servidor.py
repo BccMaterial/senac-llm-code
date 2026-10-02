@@ -65,7 +65,7 @@ ENDERECO = "127.0.0.1"
 PORTA = 8000
 CAMINHO = "/mcp"
 
-servidor = FastMCP("despesas")
+servidor = FastMCP("despesas", host=ENDERECO, port=PORTA, streamable_http_path=CAMINHO)
 
 
 # ===================================================================== 1
@@ -174,4 +174,4 @@ if __name__ == "__main__":
     # autenticação, e é a inversão de que a aula 14 trata.
     print(f"servidor de despesas no ar em {ENDERECO}:{PORTA}{CAMINHO}")
     print("(deixe este terminal aberto; os scripts 01 e 02 conectam-se aqui)")
-    servidor.run(transport="streamable-http", host=ENDERECO, port=PORTA)
+    servidor.run(transport="streamable-http")
