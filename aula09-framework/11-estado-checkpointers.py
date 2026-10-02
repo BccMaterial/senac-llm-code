@@ -1,10 +1,19 @@
-# CHECKPOINTER — o Estado sobrevive ao fim do `invoke`, por `thread_id`.
+# ESTADO + CHECKPOINTER — o que o agente aprende, e por quanto tempo dura.
 #
+# https://docs.langchain.com/oss/python/langgraph/graph-api#state
 # https://docs.langchain.com/oss/python/langgraph/persistence
 #
-# O mesmo grafo do arquivo anterior, com UMA linha a mais: o `checkpointer`
-# no `compile`. Agora cada `invoke` recebe um `thread_id` e o grafo começa do
-# Estado em que aquela thread parou — mensagens E `preferencias`.
+# O usuário conta uma preferência, o modelo decide guardá-la chamando a
+# ferramenta `salvar_preferencia`, e o nó de ferramentas grava o par
+# chave/valor num campo próprio do Estado: `preferencias`, ao lado das
+# mensagens. A partir daí o system prompt é montado com o que está lá.
+#
+# Ao fim da conversa, o nó `sugerir_pratos` sugere pratos lendo SÓ o campo
+# `preferencias` — ele não vê a conversa. É o Estado servindo de memória
+# compartilhada entre nós: um escreve, outro lê.
+#
+# Sem nada mais, o Estado morre com o `invoke`. O `checkpointer` no `compile`
+# o grava ao fim de cada execução, por `thread_id`, e o devolve na próxima:
 #
 #   CHECKPOINTER  guarda o ESTADO de UMA execução, por `thread_id`.
 #                 Serve para RETOMAR: a conversa continua de onde parou.
@@ -14,18 +23,22 @@
 #
 #                      ┌───────┐
 #                      │ START │ ◄── Estado da thread, lido do checkpoint
-#                      └───┬───┘
+#                      └───┬───┘     (e gravado de volta ao fim do `invoke`)
 #                          ▼
 #                  ┌───────────────┐
 #           ┌────► │    agente     │ ──► lê `preferencias` do Estado
 #           │      └───────┬───────┘
 #           │              ▼
-#           │       pediu ferramenta? ── não ──► END ──► Estado gravado
-#           │              │ sim                         no checkpoint
-#           │              ▼
-#           │      ┌───────────────┐
-#           └───── │no_ferramentas │ ──► escreve em `preferencias`
-#                  └───────────────┘
+#           │       pediu ferramenta? ── não ───────┐
+#           │              │ sim                    │
+#           │              ▼                        ▼
+#           │      ┌───────────────┐       ┌────────────────┐
+#           └───── │no_ferramentas │       │ sugerir_pratos │
+#                  └───────────────┘       └────────┬───────┘
+#            escreve em `preferencias`              ▼
+#                                                ┌─────┐   sugerir_pratos lê
+#                                                │ END │   `preferencias` e
+#                                                └─────┘   escreve `sugestoes`
 
 from typing import Annotated, Literal, TypedDict
 
@@ -50,6 +63,7 @@ def juntar(atual: dict, novo: dict) -> dict:
 class Estado(TypedDict):
     mensagens: Annotated[list[AnyMessage], add_messages]
     preferencias: Annotated[dict[str, str], juntar]
+    sugestoes: str
 
 
 # --------------------------------------------------------------- ferramenta
@@ -96,10 +110,22 @@ def no_ferramentas(estado: Estado):
     return {"mensagens": mensagens, "preferencias": preferencias}
 
 
-def deve_continuar(estado: Estado) -> Literal["no_ferramentas", END]:
+def sugerir_pratos(estado: Estado):
+    """Sugere pratos a partir de `preferencias` — sem olhar a conversa."""
+    preferencias = estado.get("preferencias", {})
+    if not preferencias:
+        return {"sugestoes": "(nenhuma preferência no Estado — nada a sugerir)"}
+    resposta = modelo.invoke(
+        f"Sugira três pratos para alguém com estas preferências: {preferencias}. "
+        "Um prato por linha, com uma frase de explicação."
+    )
+    return {"sugestoes": resposta.text}
+
+
+def deve_continuar(estado: Estado) -> Literal["no_ferramentas", "sugerir_pratos"]:
     if estado["mensagens"][-1].tool_calls:
         return "no_ferramentas"
-    return END
+    return "sugerir_pratos"
 
 
 # -------------------------------------------------------------------- o grafo
@@ -107,9 +133,11 @@ def deve_continuar(estado: Estado) -> Literal["no_ferramentas", END]:
 construtor = StateGraph(Estado)
 construtor.add_node("agente", agente)
 construtor.add_node("no_ferramentas", no_ferramentas)
+construtor.add_node("sugerir_pratos", sugerir_pratos)
 construtor.add_edge(START, "agente")
-construtor.add_conditional_edges("agente", deve_continuar, ["no_ferramentas", END])
+construtor.add_conditional_edges("agente", deve_continuar, ["no_ferramentas", "sugerir_pratos"])
 construtor.add_edge("no_ferramentas", "agente")
+construtor.add_edge("sugerir_pratos", END)
 
 grafo = construtor.compile(checkpointer=InMemorySaver())
 
@@ -128,13 +156,16 @@ def falar(texto: str, config: dict):
     for mensagem in saida["mensagens"][inicio + 1:]:
         mensagem.pretty_print()
     print(f"\n  [estado] preferencias = {saida['preferencias']}")
+    print(f"\n  [estado] sugestoes:\n{saida['sugestoes']}")
 
 
-# 1. O usuário declara a preferência, e ela vai para o Estado da thread.
+# 1. O usuário declara a preferência: o modelo chama a ferramenta, ela vai
+#    para o Estado da thread, e `sugerir_pratos` a usa.
 falar("Oi! Meu nome é Celso e gosto de churrasco.", thread_1)
 
 # 2. Mesma thread: o CHECKPOINT devolve o Estado — mensagens e `preferencias`.
 falar("Qual é o meu nome, e do que eu gosto de comer?", thread_1)
 
-# 3. Thread NOVA: o checkpoint dela está vazio, e o agente não sabe nada.
+# 3. Thread NOVA: o checkpoint dela está vazio. O agente não sabe nada, e
+#    não há o que sugerir.
 falar("Qual é o meu nome, e do que eu gosto de comer?", thread_2)
