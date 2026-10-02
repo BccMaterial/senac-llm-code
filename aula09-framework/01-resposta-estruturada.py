@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 class Contato(BaseModel):
     """Dados de contato de uma pessoa."""
@@ -23,6 +25,7 @@ result = agent.invoke(
     {"messages": [HumanMessage(content="Extraia os dados de contato de: João da Silva, joao@exemplo.com.br, (11) 98765-4321")]}
 )
 
-print(f"[{PROVEDOR}:{MODELO}]")
-print(result["structured_response"])
+for mensagem in result["messages"]:
+    mensagem.pretty_print()
+print("objeto validado:", result["structured_response"])
 # Contato(nome='João da Silva', email='joao@exemplo.com.br', telefone='(11) 98765-4321')

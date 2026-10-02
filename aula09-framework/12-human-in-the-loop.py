@@ -44,6 +44,8 @@ from langgraph.types import Command, interrupt
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 class Estado(TypedDict):
     mensagens: Annotated[list[AnyMessage], operator.add]
@@ -123,8 +125,6 @@ grafo = construtor.compile(checkpointer=checkpointer)
 
 # ------------------------------------------------------------------ execução
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
 config = {"configurable": {"thread_id": "email-01"}}
 
 # 1. Primeira chamada: o grafo roda até o interrupt e devolve o pedido.
@@ -132,6 +132,9 @@ saida = grafo.invoke(
     {"mensagens": [HumanMessage(content="Mande um e-mail para alice@exemplo.com.br sobre a reunião de amanhã.")]},
     config,
 )
+
+# O pedido de chamada que o modelo fez — é ele que o interrupt segura.
+saida["mensagens"][-1].pretty_print()
 
 pendente = saida["__interrupt__"][0].value
 print("\n  APROVAÇÃO NECESSÁRIA")
@@ -146,4 +149,4 @@ saida = grafo.invoke(
     config,
 )
 
-print(f"\n{saida['mensagens'][-1].text}")
+saida["mensagens"][-1].pretty_print()

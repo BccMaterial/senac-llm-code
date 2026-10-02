@@ -69,12 +69,16 @@ def tem_desfecho(estado: Estado):
 def melhorar_piada(estado: Estado):
     """Segunda chamada: acrescenta jogo de palavras."""
     resposta = modelo.invoke(f"Deixe esta piada mais engraçada acrescentando um jogo de palavras: {estado['piada']}")
+    print("\n  [nó] melhorar_piada")
+    resposta.pretty_print()
     return {"piada_melhorada": resposta.text}
 
 
 def polir_piada(estado: Estado):
     """Terceira chamada: o acabamento."""
     resposta = modelo.invoke(f"Acrescente uma reviravolta surpreendente a esta piada: {estado['piada_melhorada']}")
+    print("\n  [nó] polir_piada")
+    resposta.pretty_print()
     return {"piada_final": resposta.text}
 
 
@@ -106,12 +110,5 @@ estado = cadeia.invoke({"piada": piada_malfeita})
 print("\nPiada inicial:")
 print(estado["piada"])
 
-if "piada_melhorada" in estado:
-    print("\n--- --- ---\n")
-    print("Piada melhorada:")
-    print(estado["piada_melhorada"])
-    print("\n--- --- ---\n")
-    print("Piada final:")
-    print(estado["piada_final"])
-else:
+if "piada_melhorada" not in estado:
     print("\n(passou no portão na primeira tentativa — os outros dois nós nem rodaram)")

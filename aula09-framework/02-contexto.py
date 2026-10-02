@@ -6,6 +6,8 @@ from langchain.messages import HumanMessage
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 class Contexto(TypedDict):
     nome_do_usuario: str
@@ -36,6 +38,5 @@ result = agent.invoke(
     context=Contexto(nome_do_usuario="Celso"),
 )
 
-print(f"[{PROVEDOR}:{MODELO}]")
 for msg in result["messages"]:
     msg.pretty_print()

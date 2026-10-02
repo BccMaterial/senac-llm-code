@@ -38,6 +38,8 @@ from langgraph.store.memory import InMemoryStore
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 class Estado(TypedDict):
     mensagens: Annotated[list[AnyMessage], add_messages]
@@ -81,8 +83,6 @@ grafo = construtor.compile(checkpointer=InMemorySaver(), store=InMemoryStore())
 
 # ------------------------------------------------------------------ execução
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
 contexto = Contexto(usuario_id="celso")
 thread_1 = {"configurable": {"thread_id": "conversa-1"}}
 thread_2 = {"configurable": {"thread_id": "conversa-2"}}
@@ -91,7 +91,7 @@ thread_2 = {"configurable": {"thread_id": "conversa-2"}}
 def falar(texto: str, config: dict):
     print(f"\n> {texto}   ({config['configurable']['thread_id']})")
     saida = grafo.invoke({"mensagens": [HumanMessage(content=texto)]}, config, context=contexto)
-    print(saida["mensagens"][-1].text)
+    saida["mensagens"][-1].pretty_print()
 
 
 # 1. Primeira conversa: nada na memória ainda.

@@ -46,6 +46,8 @@ from pydantic import BaseModel, Field
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 # ------------------------------------------------------------------ o plano
 
@@ -58,7 +60,7 @@ class Secoes(BaseModel):
     secoes: list[Secao] = Field(description="As seções do relatório.")
 
 
-planejador = modelo.with_structured_output(Secoes)
+planejador = modelo.with_structured_output(Secoes, include_raw=True)
 
 
 # -------------------------------------------------------------------- estado
@@ -83,13 +85,15 @@ class EstadoDoTrabalhador(TypedDict):
 
 def orquestrador(estado: Estado):
     """Planeja o relatório: decide quais seções existem."""
-    plano = planejador.invoke(
+    saida = planejador.invoke(
         [
             SystemMessage(content="Monte o plano de um relatório, dividido em seções."),
             HumanMessage(content=f"O tema do relatório é: {estado['tema']}"),
         ]
     )
-    print(f"  [orquestrador] {len(plano.secoes)} seções planejadas")
+    plano = saida["parsed"]
+    print(f"\n  [orquestrador] {len(plano.secoes)} seções planejadas")
+    saida["raw"].pretty_print()
     return {"secoes": plano.secoes}
 
 
@@ -101,7 +105,8 @@ def trabalhador(estado: EstadoDoTrabalhador):
             HumanMessage(content=f"Nome da seção: {estado['secao'].nome}. Descrição: {estado['secao'].descricao}"),
         ]
     )
-    print(f"  [trabalhador] pronto: {estado['secao'].nome}")
+    print(f"\n  [trabalhador] pronto: {estado['secao'].nome}")
+    secao.pretty_print()
     return {"secoes_prontas": [secao.text]}
 
 
@@ -132,9 +137,4 @@ orquestracao = construtor.compile()
 
 # ------------------------------------------------------------------ execução
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
 estado = orquestracao.invoke({"tema": "Escalonamento de processos em sistemas operacionais"})
-
-print()
-print(estado["relatorio_final"])

@@ -4,6 +4,8 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 # https://docs.langchain.com/oss/python/langchain/short-term-memory#customizing-agent-memory
 
 def get_user_info() -> str:
@@ -21,18 +23,16 @@ agent = create_agent(
 # conversa. Com outro identificador, o agente começa do zero.
 thread_config = {"configurable": {"thread_id": "1"}}
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
-resposta = agent.invoke(
+resultado = agent.invoke(
     {"messages": [HumanMessage(content="Oi! Meu nome é Celso.")]},
     thread_config,
-)["messages"][-1].text
-print(resposta)
+)
+resultado["messages"][-1].pretty_print()
 # "Olá, Celso! Prazer em conhecer você. Como posso ajudar?"
 
-resposta = agent.invoke(
+resultado = agent.invoke(
     {"messages": [HumanMessage(content="Qual é o meu nome?")]},
     thread_config,
-)["messages"][-1].text
-print(resposta)
+)
+resultado["messages"][-1].pretty_print()
 # "Seu nome é Celso!"

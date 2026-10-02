@@ -4,6 +4,8 @@ from langchain.tools import tool
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 @tool
 def get_weather(cidade: str) -> str:
@@ -25,5 +27,5 @@ result = agent.invoke(
     {"messages": [HumanMessage(content="Como está o tempo na cidade de São Paulo?")]}
 )
 
-print(f"[{PROVEDOR}:{MODELO}]")
-print(result["messages"][-1].text)
+for mensagem in result["messages"]:
+    mensagem.pretty_print()

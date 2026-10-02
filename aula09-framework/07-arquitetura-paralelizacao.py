@@ -57,6 +57,7 @@ def gerar_piada(estado: Estado):
     inicio = time.perf_counter()
     resposta = modelo.invoke(f"Escreva uma piada sobre {estado['tema']}")
     print(f"  [nó] gerar_piada  {time.perf_counter() - inicio:5.1f} s")
+    resposta.pretty_print()
     return {"piada": resposta.text}
 
 
@@ -65,6 +66,7 @@ def gerar_conto(estado: Estado):
     inicio = time.perf_counter()
     resposta = modelo.invoke(f"Escreva um conto curto sobre {estado['tema']}")
     print(f"  [nó] gerar_conto  {time.perf_counter() - inicio:5.1f} s")
+    resposta.pretty_print()
     return {"conto": resposta.text}
 
 
@@ -73,6 +75,7 @@ def gerar_poema(estado: Estado):
     inicio = time.perf_counter()
     resposta = modelo.invoke(f"Escreva um poema sobre {estado['tema']}")
     print(f"  [nó] gerar_poema  {time.perf_counter() - inicio:5.1f} s")
+    resposta.pretty_print()
     return {"poema": resposta.text}
 
 
@@ -116,5 +119,4 @@ total = time.perf_counter() - inicio
 # modelo só, as três chamadas entram numa FILA e o total vira a soma — o
 # paralelismo do grafo não se converte em ganho nenhum. Contra uma API, que
 # atende as três ao mesmo tempo, o total tende ao MAIOR dos três.
-print(f"  total {total:5.1f} s\n")
-print(estado["saida_combinada"])
+print(f"\n  total {total:5.1f} s")

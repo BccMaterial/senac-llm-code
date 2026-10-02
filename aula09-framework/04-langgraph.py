@@ -32,6 +32,8 @@ from langgraph.graph import END, START, StateGraph
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 # --------------------------------------------------------------- ferramentas
 
@@ -125,6 +127,5 @@ agent = construtor.compile()
 
 resultado = agent.invoke({"mensagens": [HumanMessage(content="Só quero dizer oi!")]})
 
-print(f"[{PROVEDOR}:{MODELO}]")
 for mensagem in resultado["mensagens"]:
     mensagem.pretty_print()

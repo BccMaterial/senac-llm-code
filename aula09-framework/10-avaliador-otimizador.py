@@ -39,6 +39,8 @@ from pydantic import BaseModel, Field
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 MAXIMO_DE_VOLTAS = 3
 
 
@@ -49,7 +51,7 @@ class Avaliacao(BaseModel):
     feedback: str = Field(description="Se a piada não tem graça, diga como melhorá-la.")
 
 
-avaliador = modelo.with_structured_output(Avaliacao)
+avaliador = modelo.with_structured_output(Avaliacao, include_raw=True)
 
 
 # -------------------------------------------------------------------- estado
@@ -73,13 +75,16 @@ def gerar_piada(estado: Estado):
         pedido = f"Escreva uma piada sobre {estado['tema']}"
     resposta = modelo.invoke(pedido)
     print(f"  [volta {volta}] piada gerada")
+    resposta.pretty_print()
     return {"piada": resposta.text, "voltas": volta}
 
 
 def avaliar_piada(estado: Estado):
     """Julga a piada e devolve nota e crítica."""
-    avaliacao = avaliador.invoke(f"Avalie esta piada: {estado['piada']}")
+    saida = avaliador.invoke(f"Avalie esta piada: {estado['piada']}")
+    avaliacao = saida["parsed"]
     print(f"  [volta {estado['voltas']}] veredito: {avaliacao.nota}")
+    saida["raw"].pretty_print()
     return {"veredito": avaliacao.nota, "feedback": avaliacao.feedback}
 
 
@@ -115,9 +120,6 @@ otimizacao = construtor.compile()
 
 # ------------------------------------------------------------------ execução
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
 estado = otimizacao.invoke({"tema": "gatos"})
 
-print(f"\n{estado['piada']}")
 print(f"\n(aprovada na volta {estado['voltas']}; última crítica: {estado['feedback']})")

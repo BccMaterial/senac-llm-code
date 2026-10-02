@@ -40,6 +40,8 @@ from pydantic import BaseModel, Field
 
 from cliente import MODELO, PROVEDOR, modelo
 
+print(f"[{PROVEDOR}:{MODELO}]")
+
 
 # ------------------------------------------------------------------- a rota
 
@@ -47,7 +49,7 @@ class Rota(BaseModel):
     passo: Literal["conto", "piada", "poema"] = Field(description="O próximo passo do roteamento.")
 
 
-roteador_do_modelo = modelo.with_structured_output(Rota)
+roteador_do_modelo = modelo.with_structured_output(Rota, include_raw=True)
 
 
 # -------------------------------------------------------------------- estado
@@ -62,30 +64,38 @@ class Estado(TypedDict):
 
 def roteador(estado: Estado):
     """Decide para onde a entrada vai."""
-    decisao = roteador_do_modelo.invoke(
+    saida = roteador_do_modelo.invoke(
         [
             SystemMessage(content="Classifique o pedido do usuário em conto, piada ou poema."),
             HumanMessage(content=estado["entrada"]),
         ]
     )
-    return {"decisao": decisao.passo}
+    print("\n  [nó] roteador")
+    saida["raw"].pretty_print()
+    return {"decisao": saida["parsed"].passo}
 
 
 def escrever_conto(estado: Estado):
     """Escreve um conto."""
     resposta = modelo.invoke(f"Escreva um conto curto atendendo a este pedido: {estado['entrada']}")
+    print("\n  [nó] escrever_conto")
+    resposta.pretty_print()
     return {"saida": resposta.text}
 
 
 def escrever_piada(estado: Estado):
     """Escreve uma piada."""
     resposta = modelo.invoke(f"Escreva uma piada atendendo a este pedido: {estado['entrada']}")
+    print("\n  [nó] escrever_piada")
+    resposta.pretty_print()
     return {"saida": resposta.text}
 
 
 def escrever_poema(estado: Estado):
     """Escreve um poema."""
     resposta = modelo.invoke(f"Escreva um poema atendendo a este pedido: {estado['entrada']}")
+    print("\n  [nó] escrever_poema")
+    resposta.pretty_print()
     return {"saida": resposta.text}
 
 
@@ -121,9 +131,6 @@ roteamento = construtor.compile()
 
 # ------------------------------------------------------------------ execução
 
-print(f"[{PROVEDOR}:{MODELO}]")
-
 estado = roteamento.invoke({"entrada": "Me escreva uma piada sobre gatos"})
 
-print(f"  [rota] {estado['decisao']}\n")
-print(estado["saida"])
+print(f"\n  [rota] {estado['decisao']}")
