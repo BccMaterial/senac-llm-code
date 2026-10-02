@@ -29,7 +29,7 @@
 import uuid
 from typing import Annotated, TypedDict
 
-from langchain.messages import AnyMessage, SystemMessage
+from langchain.messages import AnyMessage, HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -90,7 +90,7 @@ thread_2 = {"configurable": {"thread_id": "conversa-2"}}
 
 def falar(texto: str, config: dict):
     print(f"\n> {texto}   ({config['configurable']['thread_id']})")
-    saida = grafo.invoke({"mensagens": [{"role": "user", "content": texto}]}, config, context=contexto)
+    saida = grafo.invoke({"mensagens": [HumanMessage(content=texto)]}, config, context=contexto)
     print(saida["mensagens"][-1].text)
 
 

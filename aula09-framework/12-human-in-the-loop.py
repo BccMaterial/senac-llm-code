@@ -36,7 +36,7 @@ import operator
 import sqlite3
 from typing import Annotated, Literal, TypedDict
 
-from langchain.messages import AnyMessage, ToolMessage
+from langchain.messages import AnyMessage, HumanMessage, ToolMessage
 from langchain.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
@@ -129,7 +129,7 @@ config = {"configurable": {"thread_id": "email-01"}}
 
 # 1. Primeira chamada: o grafo roda até o interrupt e devolve o pedido.
 saida = grafo.invoke(
-    {"mensagens": [{"role": "user", "content": "Mande um e-mail para alice@exemplo.com.br sobre a reunião de amanhã."}]},
+    {"mensagens": [HumanMessage(content="Mande um e-mail para alice@exemplo.com.br sobre a reunião de amanhã.")]},
     config,
 )
 
