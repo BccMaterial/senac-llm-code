@@ -42,7 +42,7 @@ outros importam `modelo` dele e não fazem ideia do que há do outro lado.
 | `08-arquitetura-routing.py` | *router* — agora quem decide é o modelo |
 | `09-arquitetura-orquestrator.py` | `Send`: um trabalhador por item, decidido em runtime |
 | `10-avaliador-otimizador.py` | a aresta de volta, com **limite de voltas** |
-| `11-estado-preferencias.py` | o agente guarda a preferência do usuário num campo do **Estado** — e ela some no `invoke` seguinte |
+| `11-estado-preferencias.py` | o agente guarda a preferência do usuário num campo do **Estado**, e outro nó sugere pratos lendo só esse campo — que some no `invoke` seguinte |
 | `12-checkpointers.py` | `checkpointer`: o Estado volta na mesma thread, e não numa nova |
 | `13-stores.py` | `store`: a preferência vale em qualquer thread — retomar não é lembrar |
 | `14-human-in-the-loop.py` | `interrupt`: o grafo para e espera uma pessoa |
