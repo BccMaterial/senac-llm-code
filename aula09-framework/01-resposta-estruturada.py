@@ -1,6 +1,7 @@
 # https://docs.langchain.com/oss/python/langchain/structured-output
 
 from langchain.agents import create_agent
+from langchain.messages import HumanMessage
 from pydantic import BaseModel, Field
 
 from cliente import MODELO, PROVEDOR, modelo
@@ -19,7 +20,7 @@ class Contato(BaseModel):
 agent = create_agent(model=modelo, response_format=Contato)
 
 result = agent.invoke(
-    {"messages": [{"role": "user", "content": "Extraia os dados de contato de: João da Silva, joao@exemplo.com.br, (11) 98765-4321"}]}
+    {"messages": [HumanMessage(content="Extraia os dados de contato de: João da Silva, joao@exemplo.com.br, (11) 98765-4321")]}
 )
 
 print(f"[{PROVEDOR}:{MODELO}]")

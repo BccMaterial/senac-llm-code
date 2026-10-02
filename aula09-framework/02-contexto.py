@@ -2,6 +2,7 @@ from typing import TypedDict
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelRequest, dynamic_prompt
+from langchain.messages import HumanMessage
 
 from cliente import MODELO, PROVEDOR, modelo
 
@@ -31,7 +32,7 @@ agent = create_agent(
 )
 
 result = agent.invoke(
-    {"messages": [{"role": "user", "content": "Como está o tempo em São Paulo?"}]},
+    {"messages": [HumanMessage(content="Como está o tempo em São Paulo?")]},
     context=Contexto(nome_do_usuario="Celso"),
 )
 

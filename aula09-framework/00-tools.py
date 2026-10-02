@@ -1,4 +1,5 @@
 from langchain.agents import create_agent
+from langchain.messages import HumanMessage
 from langchain.tools import tool
 
 from cliente import MODELO, PROVEDOR, modelo
@@ -21,7 +22,7 @@ agent = create_agent(
 )
 
 result = agent.invoke(
-    {"messages": [{"role": "user", "content": "Como está o tempo na cidade de São Paulo?"}]}
+    {"messages": [HumanMessage(content="Como está o tempo na cidade de São Paulo?")]}
 )
 
 print(f"[{PROVEDOR}:{MODELO}]")

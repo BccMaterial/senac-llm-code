@@ -1,4 +1,5 @@
 from langchain.agents import create_agent
+from langchain.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
 from cliente import MODELO, PROVEDOR, modelo
@@ -23,14 +24,14 @@ thread_config = {"configurable": {"thread_id": "1"}}
 print(f"[{PROVEDOR}:{MODELO}]")
 
 resposta = agent.invoke(
-    {"messages": [{"role": "user", "content": "Oi! Meu nome é Celso."}]},
+    {"messages": [HumanMessage(content="Oi! Meu nome é Celso.")]},
     thread_config,
 )["messages"][-1].text
 print(resposta)
 # "Olá, Celso! Prazer em conhecer você. Como posso ajudar?"
 
 resposta = agent.invoke(
-    {"messages": [{"role": "user", "content": "Qual é o meu nome?"}]},
+    {"messages": [HumanMessage(content="Qual é o meu nome?")]},
     thread_config,
 )["messages"][-1].text
 print(resposta)
