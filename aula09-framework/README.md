@@ -1,6 +1,6 @@
 # Aula 09 — Frameworks e orquestração
 
-Treze arquivos, e **cada um acrescenta uma coisa ao anterior**. O `diff` entre
+Quinze arquivos, e **cada um acrescenta uma coisa ao anterior**. O `diff` entre
 dois arquivos consecutivos é o conteúdo do passo: rode um, converse com ele,
 passe para o próximo e repare no que entrou.
 
@@ -42,8 +42,10 @@ outros importam `modelo` dele e não fazem ideia do que há do outro lado.
 | `08-arquitetura-routing.py` | *router* — agora quem decide é o modelo |
 | `09-arquitetura-orquestrator.py` | `Send`: um trabalhador por item, decidido em runtime |
 | `10-avaliador-otimizador.py` | a aresta de volta, com **limite de voltas** |
-| `11-checkpointers-stores.py` | checkpoint × store — retomar não é lembrar |
-| `12-human-in-the-loop.py` | `interrupt`: o grafo para e espera uma pessoa |
+| `11-estado-preferencias.py` | o agente guarda a preferência do usuário num campo do **Estado** — e ela some no `invoke` seguinte |
+| `12-checkpointers.py` | `checkpointer`: o Estado volta na mesma thread, e não numa nova |
+| `13-stores.py` | `store`: a preferência vale em qualquer thread — retomar não é lembrar |
+| `14-human-in-the-loop.py` | `interrupt`: o grafo para e espera uma pessoa |
 
 Cada arquivo a partir do `04` traz **o grafo desenhado em ASCII no cabeçalho**.
 Vale ler o desenho antes de ler o código.
