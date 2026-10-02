@@ -4,7 +4,8 @@
 #
 # O mesmo grafo do arquivo anterior, com o `store` ao lado do checkpointer no
 # `compile`. O nó de ferramentas passa a gravar a preferência TAMBÉM no store,
-# no namespace do usuário, e o agente monta o system prompt lendo de lá.
+# no namespace do usuário, e o agente monta o system prompt lendo de lá —
+# assim como `sugerir_pratos`, que agora lê do store e não do Estado.
 #
 #   CHECKPOINTER  guarda o ESTADO de UMA execução, por `thread_id`.
 #                 Serve para RETOMAR: a conversa continua de onde parou.
@@ -18,18 +19,22 @@
 #
 #                      ┌───────┐
 #                      │ START │ ◄── Estado da thread, lido do checkpoint
-#                      └───┬───┘
+#                      └───┬───┘     (e gravado de volta ao fim do `invoke`)
 #                          ▼
 #                  ┌───────────────┐
 #           ┌────► │    agente     │ ──► lê o STORE (o que eu sei do usuário)
 #           │      └───────┬───────┘
 #           │              ▼
-#           │       pediu ferramenta? ── não ──► END ──► Estado gravado
-#           │              │ sim                         no checkpoint
-#           │              ▼
-#           │      ┌───────────────┐
-#           └───── │no_ferramentas │ ──► escreve em `preferencias` E no STORE
-#                  └───────────────┘
+#           │       pediu ferramenta? ── não ───────┐
+#           │              │ sim                    │
+#           │              ▼                        ▼
+#           │      ┌───────────────┐       ┌────────────────┐
+#           └───── │no_ferramentas │       │ sugerir_pratos │
+#                  └───────────────┘       └────────┬───────┘
+#        escreve em `preferencias`                  ▼
+#        E no STORE                              ┌─────┐   sugerir_pratos lê
+#                                                │ END │   o STORE e
+#                                                └─────┘   escreve `sugestoes`
 
 from typing import Annotated, Literal, TypedDict
 
@@ -56,6 +61,7 @@ def juntar(atual: dict, novo: dict) -> dict:
 class Estado(TypedDict):
     mensagens: Annotated[list[AnyMessage], add_messages]
     preferencias: Annotated[dict[str, str], juntar]
+    sugestoes: str
 
 
 class Contexto(TypedDict):
@@ -113,10 +119,23 @@ def no_ferramentas(estado: Estado, runtime: Runtime[Contexto]):
     return {"mensagens": mensagens, "preferencias": preferencias}
 
 
-def deve_continuar(estado: Estado) -> Literal["no_ferramentas", END]:
+def sugerir_pratos(estado: Estado, runtime: Runtime[Contexto]):
+    """Sugere pratos a partir do que o STORE sabe — sem olhar a conversa."""
+    espaco = ("usuario", runtime.context["usuario_id"])
+    preferencias = {item.key: item.value["valor"] for item in runtime.store.search(espaco)}
+    if not preferencias:
+        return {"sugestoes": "(nenhuma preferência no store — nada a sugerir)"}
+    resposta = modelo.invoke(
+        f"Sugira três pratos para alguém com estas preferências: {preferencias}. "
+        "Um prato por linha, com uma frase de explicação."
+    )
+    return {"sugestoes": resposta.text}
+
+
+def deve_continuar(estado: Estado) -> Literal["no_ferramentas", "sugerir_pratos"]:
     if estado["mensagens"][-1].tool_calls:
         return "no_ferramentas"
-    return END
+    return "sugerir_pratos"
 
 
 # -------------------------------------------------------------------- o grafo
@@ -124,20 +143,17 @@ def deve_continuar(estado: Estado) -> Literal["no_ferramentas", END]:
 construtor = StateGraph(Estado, context_schema=Contexto)
 construtor.add_node("agente", agente)
 construtor.add_node("no_ferramentas", no_ferramentas)
+construtor.add_node("sugerir_pratos", sugerir_pratos)
 construtor.add_edge(START, "agente")
-construtor.add_conditional_edges("agente", deve_continuar, ["no_ferramentas", END])
+construtor.add_conditional_edges("agente", deve_continuar, ["no_ferramentas", "sugerir_pratos"])
 construtor.add_edge("no_ferramentas", "agente")
+construtor.add_edge("sugerir_pratos", END)
 
 # As duas memórias são passadas no `compile`, lado a lado e independentes.
 grafo = construtor.compile(checkpointer=InMemorySaver(), store=InMemoryStore())
 
 
 # ------------------------------------------------------------------ execução
-
-contexto = Contexto(usuario_id="celso")
-thread_1 = {"configurable": {"thread_id": "conversa-1"}}
-thread_2 = {"configurable": {"thread_id": "conversa-2"}}
-
 
 def falar(texto: str, config: dict):
     print(f"\n> {texto}   ({config['configurable']['thread_id']})")
@@ -147,6 +163,12 @@ def falar(texto: str, config: dict):
     for mensagem in saida["mensagens"][inicio + 1:]:
         mensagem.pretty_print()
     print(f"\n  [estado] preferencias = {saida['preferencias']}")
+    print(f"\n  [estado] sugestoes:\n{saida['sugestoes']}")
+
+
+contexto = Contexto(usuario_id="celso")
+thread_1 = {"configurable": {"thread_id": "conversa-1"}}
+thread_2 = {"configurable": {"thread_id": "conversa-2"}}
 
 
 # 1. O usuário declara a preferência: ela vai para o Estado da thread E para o
@@ -156,5 +178,6 @@ falar("Oi! Meu nome é Celso e gosto de churrasco.", thread_1)
 # 2. Mesma thread: o CHECKPOINT basta — a pergunta anterior está no Estado.
 falar("Qual é o meu nome, e do que eu gosto de comer?", thread_1)
 
-# 3. Thread NOVA: o Estado começa vazio. Se ele acertar, foi o STORE.
+# 3. Thread NOVA: o Estado começa vazio. Se ele acertar — e sugerir pratos —,
+#    foi o STORE.
 falar("Qual é o meu nome, e do que eu gosto de comer?", thread_2)
