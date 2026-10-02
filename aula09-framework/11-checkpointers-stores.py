@@ -101,4 +101,4 @@ falar("Oi! Meu nome é Celso e gosto de churrasco.", thread_1)
 falar("Qual é o meu nome?", thread_1)
 
 # 3. Thread NOVA: o checkpoint está vazio. Se ele acertar, foi o STORE.
-falar("Qual é o meu nome, e o que eu como?", thread_2)
+falar("Qual é o meu nome, e do que eu gosto de comer?", thread_2)
