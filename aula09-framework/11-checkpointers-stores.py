@@ -95,7 +95,7 @@ def falar(texto: str, config: dict):
 
 
 # 1. Primeira conversa: nada na memória ainda.
-falar("Oi! Meu nome é Celso e eu sou vegetariano.", thread_1)
+falar("Oi! Meu nome é Celso e gosto de churrasco.", thread_1)
 
 # 2. Mesma thread: o CHECKPOINT basta — a pergunta anterior está no estado.
 falar("Qual é o meu nome?", thread_1)
